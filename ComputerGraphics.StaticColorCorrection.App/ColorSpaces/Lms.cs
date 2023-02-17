@@ -26,7 +26,7 @@ namespace ComputerGraphics.StaticColorCorrection.App.ColorSpaces
         public Lab ToLab()
         {
             return new Lab(ImageColorSpaceContainer.AsParallel()
-                .Select(x => ColorSpaceHelper.LMStoLAB * ColorSpaceHelper.LmstoLabtoRgb * x.Map(y => y == 0 ? Math.Log((double)3/255) : Math.Log(y)))
+                .Select(x => ColorSpaceHelper.LMStoLAB * ColorSpaceHelper.LmstoLabtoRgb * x.Map(y => y == 0 ? Math.Log10(3d/255) : Math.Log10(y)))
                 .AsSequential()
                 .ToList());
         }

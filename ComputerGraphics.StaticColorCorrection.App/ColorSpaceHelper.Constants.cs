@@ -11,7 +11,7 @@ namespace ComputerGraphics.StaticColorCorrection.App
         public static Matrix<double> RGBtoLMS = Matrix<double>.Build.DenseOfArray(new double[,] {
             {0.3811, 0.5783, 0.0402},
             {0.1967, 0.7244, 0.0782},
-            {0.0241, 0.1288, 0.8444 }
+            {0.0241, 0.1288, 0.8444}
         });
 
         /// <summary>

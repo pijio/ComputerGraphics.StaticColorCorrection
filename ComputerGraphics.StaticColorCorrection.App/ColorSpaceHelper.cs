@@ -1,6 +1,7 @@
 ﻿using MathNet.Numerics.LinearAlgebra;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -17,6 +18,25 @@ namespace ComputerGraphics.StaticColorCorrection.App
         /// <returns></returns>
         public static List<Matrix<double>> BitmapToRgbMatrix(Bitmap source)
         {
+            //var watcher = new Stopwatch();
+            //watcher.Start();
+            //var result = new List<Matrix<double>>(source.Width * source.Height);
+            //var compressConst = 235d / 255;
+            //for (int i = 0; i < source.Height; i++)
+            //{
+            //    for (int j = 0; j < source.Width; j++)
+            //    {
+            //        var color = source.GetPixel(j,i);
+            //        result.Add(Matrix<double>.Build.DenseOfColumnArrays(new[]
+            //        {
+
+            //            (double)color.R / 255 * compressConst,
+            //            (double)color.G / 255 * compressConst,
+            //            (double)color.B / 255 * compressConst
+            //        }));
+
+            //    }
+            //}
             var rect = new Rectangle(0, 0, source.Width, source.Height);
             var picData = source.LockBits(rect, ImageLockMode.ReadOnly, source.PixelFormat);
 
@@ -28,15 +48,17 @@ namespace ComputerGraphics.StaticColorCorrection.App
             source.UnlockBits(picData);
             var result = new List<Matrix<double>>(size);
             var compressConst = 235d / 255;
-            for(int i=0; i<rgbs.Length; i+=3)
+            for (int i = 0; i < rgbs.Length; i += 3)
             {
                 result.Add(Matrix<double>.Build.DenseOfColumnArrays(new[]
                 {
-                    (double)rgbs[i + 2] / 255 * compressConst, 
+                    (double)rgbs[i + 2] / 255 * compressConst,
                     (double)rgbs[i + 1] / 255 * compressConst,
                     (double)rgbs[i] / 255 * compressConst
                 }));
             }
+            //watcher.Stop();
+            //var time = watcher.ElapsedMilliseconds;
             return result;
         }
 
@@ -54,11 +76,14 @@ namespace ComputerGraphics.StaticColorCorrection.App
             where TIn : BaseColorSpace
             where TOut : BaseColorSpace
         {
+
             if (chainTypes.Length == 0)
             {
                 return source.ChangeColorSpace<TOut>();
             }
 
+            var watcher = new Stopwatch();
+            watcher.Start();
             object currentSource = source;
             foreach (var type in chainTypes)
             {
@@ -70,6 +95,8 @@ namespace ComputerGraphics.StaticColorCorrection.App
             var result = (TOut)currentSource.GetType().GetMethod("ChangeColorSpace")
                 .MakeGenericMethod(typeof(TOut))
                 .Invoke(currentSource, null);
+            watcher.Stop();
+            var time = watcher.ElapsedMilliseconds;
             return result;
         }
 
@@ -152,7 +179,7 @@ namespace ComputerGraphics.StaticColorCorrection.App
             };
 
             var funcForMutate = new Func<int, List<double>>(channelNo =>
-                sourceLab.ImageColorSpaceContainer.Select(
+                targetLab.ImageColorSpaceContainer.Select(
                 x =>
                     CalculateUpdatedChannel(x[channelNo, 0], mathExp[channelNo], variance[channelNo])).ToList());
             var firstTargetChannelMutated = funcForMutate(0);
@@ -160,14 +187,14 @@ namespace ComputerGraphics.StaticColorCorrection.App
             var thirdTargetChannelMutated = funcForMutate(2);
 
             var newSpace = new List<Matrix<double>>();
-            for (int i = 0; i < source.Height * source.Width; i++)
+            for (int i = 0; i < targetLab.ImageColorSpaceContainer.Count; i++)
             {
                 newSpace.Add(Matrix<double>.Build.DenseOfColumnArrays(new[] {firstTargetChannelMutated[i], secondTargetChannelMutated[i], thirdTargetChannelMutated[i]}));
             }
 
             var result = new Bitmap(source.Width, source.Height);
             var resultMap = InvokeConvertChain<Lab, Rgb>(new Lab(newSpace), typeof(Lms)).ImageColorSpaceContainer
-                .Select(x => x.Map(y => Math.Abs(y) * 255 * (1d / (233d/255)))).ToList();
+                .Select(x => x.Map(y => Math.Abs(y)) * 255d/235).ToList();
             return null;
 
         }
