@@ -47,19 +47,46 @@ namespace ComputerGraphics.StaticColorCorrection.App
 
             source.UnlockBits(picData);
             var result = new List<Matrix<double>>(size);
-            var compressConst = 235d / 255;
-            for (int i = 0; i < rgbs.Length; i += 3)
+            var compressConst = 0.92157d;
+            for (int i = 0; i < rgbs.Length / 3; i++)
             {
                 result.Add(Matrix<double>.Build.DenseOfColumnArrays(new[]
                 {
-                    (double)rgbs[i + 2] / 255 * compressConst,
-                    (double)rgbs[i + 1] / 255 * compressConst,
-                    (double)rgbs[i] / 255 * compressConst
+                    (double)rgbs[i * 3 + 2] / 255 * compressConst,
+                    (double)rgbs[i * 3 + 1] / 255 * compressConst,
+                    (double)rgbs[i * 3] / 255 * compressConst
                 }));
             }
             //watcher.Stop();
             //var time = watcher.ElapsedMilliseconds;
             return result;
+        }
+
+        public static Bitmap RgbMatrixToBitmap(List<Matrix<double>> rgbSpace, int width, int height)
+        {
+            byte[] rgbs = new byte[rgbSpace.Count * 3];
+
+            int byteIndex = 0;
+            foreach (var color in rgbSpace)
+            {
+                rgbs[byteIndex++] = (byte)(color[2,0] * 255.0); // red
+                rgbs[byteIndex++] = (byte)(color[1,0] * 255.0); // green
+                rgbs[byteIndex++] = (byte)(color[0,0] * 255.0); // blue
+            }
+
+            var bmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, bmp.PixelFormat);
+
+            try
+            {
+                Marshal.Copy(rgbs, 0, bmpData.Scan0, rgbs.Length);
+            }
+            finally
+            {
+                bmp.UnlockBits(bmpData);
+            }
+
+            return bmp;
         }
 
         /// <summary>
@@ -82,8 +109,8 @@ namespace ComputerGraphics.StaticColorCorrection.App
                 return source.ChangeColorSpace<TOut>();
             }
 
-            var watcher = new Stopwatch();
-            watcher.Start();
+            //var watcher = new Stopwatch();
+            //watcher.Start();
             object currentSource = source;
             foreach (var type in chainTypes)
             {
@@ -95,8 +122,8 @@ namespace ComputerGraphics.StaticColorCorrection.App
             var result = (TOut)currentSource.GetType().GetMethod("ChangeColorSpace")
                 .MakeGenericMethod(typeof(TOut))
                 .Invoke(currentSource, null);
-            watcher.Stop();
-            var time = watcher.ElapsedMilliseconds;
+            //watcher.Stop();
+            //var time = watcher.ElapsedMilliseconds;
             return result;
         }
 
@@ -179,7 +206,7 @@ namespace ComputerGraphics.StaticColorCorrection.App
             };
 
             var funcForMutate = new Func<int, List<double>>(channelNo =>
-                targetLab.ImageColorSpaceContainer.Select(
+                targetLab.ImageColorSpaceContainer.AsParallel().AsOrdered().Select(
                 x =>
                     CalculateUpdatedChannel(x[channelNo, 0], mathExp[channelNo], variance[channelNo])).ToList());
             var firstTargetChannelMutated = funcForMutate(0);
@@ -192,11 +219,16 @@ namespace ComputerGraphics.StaticColorCorrection.App
                 newSpace.Add(Matrix<double>.Build.DenseOfColumnArrays(new[] {firstTargetChannelMutated[i], secondTargetChannelMutated[i], thirdTargetChannelMutated[i]}));
             }
 
-            var result = new Bitmap(source.Width, source.Height);
+            var compressConst = 0.92157;
             var resultMap = InvokeConvertChain<Lab, Rgb>(new Lab(newSpace), typeof(Lms)).ImageColorSpaceContainer
-                .Select(x => x.Map(y => Math.Abs(y)) * 255d/235).ToList();
-            return null;
-
+                .AsParallel().AsOrdered()
+                .Select(x => x.Map(y =>
+                {
+                    if (y < 0) return Math.Abs(y);
+                    if (y > compressConst) return compressConst;
+                    return y;
+                })).ToList();
+            return RgbMatrixToBitmap(resultMap, target.Width, target.Height);
         }
     } 
 }

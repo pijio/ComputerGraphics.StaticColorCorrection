@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using ComputerGraphics.StaticColorCorrection.App;
@@ -63,8 +64,12 @@ namespace ComputerGraphics.StaticColorCorrection.GUI
 
         private void button3_Click(object sender, EventArgs e)
         {
-            var newBitMap =
+            var watcher = new Stopwatch();
+            watcher.Start();
+            pictureBox3.Image = 
                 ColorSpaceHelper.MergePictures(new Bitmap(_currentImagePath), new Bitmap(_currentImagePath2));
+            watcher.Stop();
+            var time = watcher.ElapsedMilliseconds;
         }
 
         private Image ScalePictureForPictureBox(Image image)
