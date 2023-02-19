@@ -66,8 +66,8 @@ namespace ComputerGraphics.StaticColorCorrection.GUI
         {
             var watcher = new Stopwatch();
             watcher.Start();
-            pictureBox3.Image = 
-                ColorSpaceHelper.MergePictures(new Bitmap(_currentImagePath), new Bitmap(_currentImagePath2));
+            pictureBox3.Image =
+                ScalePictureForPictureBox(ColorSpaceHelper.MergePictures(new Bitmap(_currentImagePath), new Bitmap(_currentImagePath2)));
             watcher.Stop();
             var time = watcher.ElapsedMilliseconds;
         }

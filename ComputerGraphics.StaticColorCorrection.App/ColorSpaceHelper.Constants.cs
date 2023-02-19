@@ -26,10 +26,19 @@ namespace ComputerGraphics.StaticColorCorrection.App
         /// <summary>
         /// матрица использующаяся для переходов из LMS в lab и из lab в RGB
         /// </summary>
-        public static Matrix<double> LmstoLabtoRgb = Matrix<double>.Build.DenseOfArray(new double[,] {
+        public static Matrix<double> LmstoLab = Matrix<double>.Build.DenseOfArray(new double[,] {
             {1, 1, 1},
             {1, 1, -2},
             {1, -1, 0}
+        });
+
+        /// <summary>
+        /// матрица использующаяся для переходов из LMS в lab и из lab в RGB
+        /// </summary>
+        public static Matrix<double> LabToLms = Matrix<double>.Build.DenseOfArray(new double[,] {
+            {1, 1, 1},
+            {1, 1, -1},
+            {1, -2, 0}
         });
 
         /// <summary>

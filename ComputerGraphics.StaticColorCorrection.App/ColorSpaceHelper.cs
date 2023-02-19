@@ -47,7 +47,7 @@ namespace ComputerGraphics.StaticColorCorrection.App
 
             source.UnlockBits(picData);
             var result = new List<Matrix<double>>(size);
-            var compressConst = 0.92157d;
+            var compressConst = 235d / 255;
             for (int i = 0; i < rgbs.Length / 3; i++)
             {
                 result.Add(Matrix<double>.Build.DenseOfColumnArrays(new[]
@@ -188,7 +188,7 @@ namespace ComputerGraphics.StaticColorCorrection.App
             var sourceMathExp = MathExpectation(sourceLab);
             var tagetMathExp = MathExpectation(targetLab);
 
-            var mathExp = new List<List<double>>
+            var mathExp = new List<List<double>> // массив матожиданий по 3 каналам для источника и таргета
             {
                 new List<double>() { sourceMathExp[0], tagetMathExp[0] },
                 new List<double>() { sourceMathExp[1], tagetMathExp[1] },
@@ -198,7 +198,7 @@ namespace ComputerGraphics.StaticColorCorrection.App
             var sourceVariance = Variance(sourceLab, sourceMathExp);
             var targetVariance = Variance(targetLab, tagetMathExp);
 
-            var variance = new List<List<double>>
+            var variance = new List<List<double>> // массив дисперсий по 3 каналам для источника и таргета
             {
                 new List<double>() { sourceVariance[0], targetVariance[0] },
                 new List<double>() { sourceVariance[1], targetVariance[1] },
@@ -219,13 +219,19 @@ namespace ComputerGraphics.StaticColorCorrection.App
                 newSpace.Add(Matrix<double>.Build.DenseOfColumnArrays(new[] {firstTargetChannelMutated[i], secondTargetChannelMutated[i], thirdTargetChannelMutated[i]}));
             }
 
-            var compressConst = 0.92157;
+            var compressConst = 235d / 255;
             var resultMap = InvokeConvertChain<Lab, Rgb>(new Lab(newSpace), typeof(Lms)).ImageColorSpaceContainer
                 .AsParallel().AsOrdered()
                 .Select(x => x.Map(y =>
                 {
-                    if (y < 0) return Math.Abs(y);
-                    if (y > compressConst) return compressConst;
+                    if (y < 0) return 0;
+                    if (y > compressConst) return 1;
+                    return y;
+                })).ToList();
+            var test = InvokeConvertChain<Lab, Rgb>(targetLab, typeof(Lms)).ImageColorSpaceContainer.Select(x => x.Map(y =>
+                {
+                    if (y < 0) return 0;
+                    if (y > compressConst) return 1;
                     return y;
                 })).ToList();
             return RgbMatrixToBitmap(resultMap, target.Width, target.Height);

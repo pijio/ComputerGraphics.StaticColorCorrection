@@ -26,14 +26,14 @@ namespace ComputerGraphics.StaticColorCorrection.App.ColorSpaces
         public Lab ToLab()
         {
             return new Lab(ImageColorSpaceContainer.AsParallel().AsOrdered()
-                .Select(x => ColorSpaceHelper.LMStoLAB * ColorSpaceHelper.LmstoLabtoRgb * x.Map(y => y == 0 ? Math.Log10(3d/255) : Math.Log10(y)))
+                .Select(x => ColorSpaceHelper.LMStoLAB * ColorSpaceHelper.LmstoLab * x.Map(y => y == 0 ? Math.Log10(3d/255) : Math.Log10(y)))
                 .ToList());
         }
 
         public Rgb ToRgb()
         {
             return new Rgb(ImageColorSpaceContainer.AsParallel().AsOrdered()
-                .Select(x => ColorSpaceHelper.LmsToRgb * x.Map(y  => Math.Pow(10, y == 0 ? 3d/255 : y))).ToList());
+                .Select(x => ColorSpaceHelper.LmsToRgb * x.Map(y  => Math.Pow(10, y))).ToList());
         }
     }
 }

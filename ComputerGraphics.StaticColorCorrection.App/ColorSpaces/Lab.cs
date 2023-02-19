@@ -26,7 +26,7 @@ namespace ComputerGraphics.StaticColorCorrection.App.ColorSpaces
         public Lms ToLms()
         {
             return new Lms(ImageColorSpaceContainer.AsParallel().AsOrdered()
-                .Select(x => ColorSpaceHelper.LmstoLabtoRgb * ColorSpaceHelper.LMStoLAB * x)
+                .Select(x => ColorSpaceHelper.LabToLms * ColorSpaceHelper.LMStoLAB * x)
                 .ToList());
         }
     }
