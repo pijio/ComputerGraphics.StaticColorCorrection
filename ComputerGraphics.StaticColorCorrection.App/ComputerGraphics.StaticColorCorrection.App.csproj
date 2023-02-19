@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="BaseColorSpace.cs" />
     <Compile Include="ColorSpaceHelper.cs" />
+    <Compile Include="ColorSpaces\Hsl.cs" />
     <Compile Include="ColorSpaces\Lab.cs" />
     <Compile Include="ColorSpaces\Lms.cs" />
     <Compile Include="ColorSpaces\Rgb.cs" />
